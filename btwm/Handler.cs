@@ -2,6 +2,8 @@
 using System.Windows.Forms;
 using System.Collections.Generic;
 using btwm.Layouts;
+using static btwm.user32;
+using System.Runtime.InteropServices;
 
 namespace btwm
 {
@@ -21,9 +23,35 @@ namespace btwm
             private Handler parentHandler;
             public ShellHookHelper(Handler parentHandler) : base()
             {
+                // Minimized metrics. This is required in order to use shellhooks
+                // Without
+                SetTaskmanWindow(Handle);
                 this.parentHandler = parentHandler;
-                notificationMessage = user32.shellHook.RegisterWindowMessage("SHELLHOOK");
-                user32.shellHook.RegisterShellHookWindow(this.Handle);
+                notificationMessage = shellHook.RegisterWindowMessage("SHELLHOOK");
+                shellHook.RegisterShellHookWindow(Handle);
+
+
+                MinimizedMetrics mm = new MinimizedMetrics
+                {
+                    cbSize = (uint)Marshal.SizeOf(typeof(MinimizedMetrics))
+                };
+
+                IntPtr mmPtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(MinimizedMetrics)));
+
+                try
+                {
+                    Marshal.StructureToPtr(mm, mmPtr, true);
+                    SystemParametersInfo(SPI.SPI_GETMINIMIZEDMETRICS, mm.cbSize, mmPtr, SPIF.None);
+
+                    mm.iArrange |= MinimizedMetricsArrangement.Hide;
+                    Marshal.StructureToPtr(mm, mmPtr, true);
+                    SystemParametersInfo(SPI.SPI_SETMINIMIZEDMETRICS, mm.cbSize, mmPtr, SPIF.None);
+                }
+                finally
+                {
+                    Marshal.DestroyStructure(mmPtr, typeof(MinimizedMetrics));
+                    Marshal.FreeHGlobal(mmPtr);
+                }
             }
 
             /// <summary>
@@ -46,7 +74,7 @@ namespace btwm
             /// <param name="disposing"></param>
             protected override void Dispose(bool disposing)
             {
-                try { user32.shellHook.DeregisterShellHookWindow(this.Handle); }
+                try { shellHook.DeregisterShellHookWindow(Handle); }
                 catch { }
                 base.Dispose(disposing);
             }

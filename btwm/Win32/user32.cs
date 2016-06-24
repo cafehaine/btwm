@@ -6,6 +6,51 @@ namespace btwm
 {
     static class user32
     {
+        [DllImport("user32.dll")]
+        public static extern bool SetTaskmanWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern bool SystemParametersInfo(SPI uiAction, uint uiParam, IntPtr pvParam, SPIF fWinIni);
+
+        [Flags]
+        public enum SPIF
+        {
+            None = 0x00,
+            SPIF_UPDATEINIFILE = 0x01,
+            SPIF_SENDCHANGE = 0x02,
+            SPIF_SENDWININICHANGE = 0x02
+        }
+
+        public enum SPI : uint
+        {
+            SPI_GETMINIMIZEDMETRICS = 0x002B,
+            SPI_SETMINIMIZEDMETRICS = 0x002C
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MinimizedMetrics
+        {
+            public uint cbSize;
+            public int iWidth;
+            public int iHorzGap;
+            public int iVertGap;
+            public MinimizedMetricsArrangement iArrange;
+        }
+
+        [Flags]
+        public enum MinimizedMetricsArrangement
+        {
+            BottomLeft = 0,
+            BottomRight = 1,
+            TopLeft = 2,
+            TopRight = 3,
+            Left = 0,
+            Right = 0,
+            Up = 4,
+            Down = 4,
+            Hide = 8
+        }
+
         public static class shellHook
         {
             public enum ShellEvents : int

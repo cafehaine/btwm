@@ -1,4 +1,5 @@
 ﻿using System.Windows.Forms;
+using System.Diagnostics;
 
 // ---------- Future note to self ----------
 // Change this to hide console:
@@ -10,6 +11,17 @@ namespace btwm
     {
         static void Main(string[] args)
         {
+            // Kill all instances of explorer.exe
+            // (should not have to happen since it is a replacement)
+            Process[] explorerInstances = Process.GetProcessesByName(
+                "explorer.exe");
+
+            foreach(Process prcss in explorerInstances)
+            {
+                prcss.Kill();
+            }
+
+
             Handler mainHandler = new Handler();
 
             while (mainHandler.running)
