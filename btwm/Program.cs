@@ -24,7 +24,7 @@ namespace btwm
 
             Handler mainHandler = new Handler();
 
-            while (mainHandler.running)
+            while (mainHandler.Running)
             {
                 // This lets Windows know that the application is running and
                 // responding. (Without this it is impossible to receive shell

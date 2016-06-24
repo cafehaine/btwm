@@ -10,42 +10,47 @@ namespace btwm
 
     class Handler
     {
-        Dictionary<string, Workspace> Workspaces;
-        Dictionary<IntPtr, Window> HandledWindows;
+        public bool Running;
+
+        Dictionary<string, Workspace> workspaces;
+        Dictionary<IntPtr, Window> handledWindows;
         string openedWorkspace;
-        ShellHookHelper shellHookHelper;
-        public bool running;
+        shellHookHelper shellHookHelp;
         List<Screen> screens;
 
-        private class ShellHookHelper : Form
+        private class shellHookHelper : Form
         {
             private int notificationMessage;
             private Handler parentHandler;
-            public ShellHookHelper(Handler parentHandler) : base()
+
+            public shellHookHelper(Handler parentHandler) : base()
             {
-                // Minimized metrics. This is required in order to use shellhooks
-                // Without
+                // Minimized metrics. This is required in order to use
+                // shellhooks without explorer.exe
                 SetTaskmanWindow(Handle);
                 this.parentHandler = parentHandler;
-                notificationMessage = shellHook.RegisterWindowMessage("SHELLHOOK");
+                notificationMessage = shellHook.RegisterWindowMessage(
+                    "SHELLHOOK");
                 shellHook.RegisterShellHookWindow(Handle);
-
 
                 MinimizedMetrics mm = new MinimizedMetrics
                 {
                     cbSize = (uint)Marshal.SizeOf(typeof(MinimizedMetrics))
                 };
 
-                IntPtr mmPtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(MinimizedMetrics)));
+                IntPtr mmPtr = Marshal.AllocHGlobal(Marshal.SizeOf(
+                    typeof(MinimizedMetrics)));
 
                 try
                 {
                     Marshal.StructureToPtr(mm, mmPtr, true);
-                    SystemParametersInfo(SPI.SPI_GETMINIMIZEDMETRICS, mm.cbSize, mmPtr, SPIF.None);
+                    SystemParametersInfo(SPI.SPI_GETMINIMIZEDMETRICS, mm.cbSize,
+                        mmPtr, SPIF.None);
 
                     mm.iArrange |= MinimizedMetricsArrangement.Hide;
                     Marshal.StructureToPtr(mm, mmPtr, true);
-                    SystemParametersInfo(SPI.SPI_SETMINIMIZEDMETRICS, mm.cbSize, mmPtr, SPIF.None);
+                    SystemParametersInfo(SPI.SPI_SETMINIMIZEDMETRICS, mm.cbSize,
+                        mmPtr, SPIF.None);
                 }
                 finally
                 {
@@ -80,16 +85,16 @@ namespace btwm
             }
         }
 
-        Workspace CurrentWorkspace
+        Workspace currentWorkspace
         {
-            get { return Workspaces[openedWorkspace]; }
+            get { return workspaces[openedWorkspace]; }
         }
 
         /// <summary>
         /// Make sure "primary" screen is the first one in the list
         /// </summary>
         /// <param name="list"></param>
-        private void SortScreenList(ref List<Screen> list)
+        private void sortScreenList(ref List<Screen> list)
         {
             if (!list[0].Primary)
             {
@@ -101,35 +106,42 @@ namespace btwm
 
         public Handler()
         {
-            Workspaces = new Dictionary<string, Workspace>();
-            HandledWindows = new Dictionary<IntPtr, Window>();
-            shellHookHelper = new ShellHookHelper(this);
-            running = true;
+            workspaces = new Dictionary<string, Workspace>();
+            handledWindows = new Dictionary<IntPtr, Window>();
+            shellHookHelp = new shellHookHelper(this);
+            Running = true;
             screens = new List<Screen>(Screen.AllScreens);
-            SortScreenList(ref screens);
+            sortScreenList(ref screens);
             openedWorkspace = "0";
-            Workspaces.Add(openedWorkspace, new Workspace());
+            workspaces.Add(openedWorkspace, new Workspace());
         }
 
-        public void eventReceiver(ref Message m)
+        /// <summary>
+        /// Called whenever an event is recieved
+        /// </summary>
+        /// <param name="m"></param>
+        void eventReceiver(ref Message m)
         {
             // Interpret message
-            switch ((user32.shellHook.ShellEvents)m.WParam.ToInt32())
+            switch ((shellHook.ShellEvents)m.WParam.ToInt32())
             {
-                case user32.shellHook.ShellEvents.HSHELL_WINDOWCREATED:
+                case shellHook.ShellEvents.HSHELL_WINDOWCREATED:
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine("{0:x8}\tregistered", m.LParam);
-                    HandledWindows.Add(m.LParam, new Window(new Split(new Workspace()), m.LParam));
-                    Workspaces[openedWorkspace].InsertWindow(HandledWindows[m.LParam]);
+                    handledWindows.Add(m.LParam, new Window(new Split(
+                        new Workspace()), m.LParam));
+                    workspaces[openedWorkspace].InsertWindow(
+                        handledWindows[m.LParam]);
                     break;
 
-                case user32.shellHook.ShellEvents.HSHELL_WINDOWDESTROYED:
-                    if (HandledWindows.ContainsKey(m.LParam))
+                case shellHook.ShellEvents.HSHELL_WINDOWDESTROYED:
+                    if (handledWindows.ContainsKey(m.LParam))
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("{0:x8}\tremoved", m.LParam);
-                        Workspaces[openedWorkspace].RemoveWindow(HandledWindows[m.LParam]);
-                        HandledWindows.Remove(m.LParam);
+                        workspaces[openedWorkspace].RemoveWindow(
+                            handledWindows[m.LParam]);
+                        handledWindows.Remove(m.LParam);
                     }
                     break;
 

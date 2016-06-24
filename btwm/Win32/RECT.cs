@@ -20,7 +20,8 @@ namespace btwm
             Bottom = bottom;
         }
 
-        public RECT(System.Drawing.Rectangle r) : this(r.Left, r.Top, r.Right, r.Bottom) { }
+        public RECT(System.Drawing.Rectangle r) : this(r.Left, r.Top, r.Right,
+            r.Bottom) { }
 
         public int X
         {
@@ -60,7 +61,8 @@ namespace btwm
 
         public static implicit operator System.Drawing.Rectangle(RECT r)
         {
-            return new System.Drawing.Rectangle(r.Left, r.Top, r.Width, r.Height);
+            return new System.Drawing.Rectangle(r.Left, r.Top, r.Width,
+                r.Height);
         }
 
         public static implicit operator RECT(System.Drawing.Rectangle r)
@@ -80,7 +82,8 @@ namespace btwm
 
         public bool Equals(RECT r)
         {
-            return r.Left == Left && r.Top == Top && r.Right == Right && r.Bottom == Bottom;
+            return r.Left == Left && r.Top == Top && r.Right == Right &&
+                r.Bottom == Bottom;
         }
 
         public override bool Equals(object obj)
@@ -99,7 +102,10 @@ namespace btwm
 
         public override string ToString()
         {
-            return string.Format(System.Globalization.CultureInfo.CurrentCulture, "{{Left={0},Top={1},Right={2},Bottom={3}}}", Left, Top, Right, Bottom);
+            return string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                "{{Left={0},Top={1},Right={2},Bottom={3}}}", Left, Top, Right,
+                Bottom);
         }
     }
 }

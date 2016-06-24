@@ -6,11 +6,17 @@ namespace btwm
 {
     static class user32
     {
+        /// <summary>
+        /// Set the window used as TaskMan (explorer.exe)
+        /// </summary>
+        /// <param name="hWnd"></param>
+        /// <returns></returns>
         [DllImport("user32.dll")]
         public static extern bool SetTaskmanWindow(IntPtr hWnd);
 
         [DllImport("user32.dll")]
-        public static extern bool SystemParametersInfo(SPI uiAction, uint uiParam, IntPtr pvParam, SPIF fWinIni);
+        public static extern bool SystemParametersInfo(SPI uiAction,
+            uint uiParam, IntPtr pvParam, SPIF fWinIni);
 
         [Flags]
         public enum SPIF
@@ -53,9 +59,18 @@ namespace btwm
 
         public static class shellHook
         {
+            /// <summary>
+            /// The different kinds of shell hooks
+            /// </summary>
             public enum ShellEvents : int
             {
+                /// <summary>
+                /// A window was created
+                /// </summary>
                 HSHELL_WINDOWCREATED = 1,
+                /// <summary>
+                /// A window was destroyed
+                /// </summary>
                 HSHELL_WINDOWDESTROYED = 2,
                 HSHELL_ACTIVATESHELLWINDOW = 3,
                 HSHELL_WINDOWACTIVATED = 4,
@@ -66,11 +81,17 @@ namespace btwm
                 HSHELL_ACCESSIBILITYSTATE = 11,
                 HSHELL_APPCOMMAND = 12
             }
-            [DllImport("user32.dll", EntryPoint = "RegisterWindowMessageA", CharSet = CharSet.Ansi, SetLastError = true, ExactSpelling = true)]
+            [DllImport("user32.dll", EntryPoint = "RegisterWindowMessageA",
+                CharSet = CharSet.Ansi, SetLastError = true,
+                ExactSpelling = true)]
             public static extern int RegisterWindowMessage(string lpString);
-            [DllImport("user32", CharSet = CharSet.Ansi, SetLastError = true, ExactSpelling = true)]
+
+            [DllImport("user32", CharSet = CharSet.Ansi, SetLastError = true,
+                ExactSpelling = true)]
             public static extern int DeregisterShellHookWindow(IntPtr hWnd);
-            [DllImport("user32", CharSet = CharSet.Ansi, SetLastError = true, ExactSpelling = true)]
+
+            [DllImport("user32", CharSet = CharSet.Ansi, SetLastError = true,
+                ExactSpelling = true)]
             public static extern int RegisterShellHookWindow(IntPtr hWnd);
         }
 
@@ -283,13 +304,15 @@ namespace btwm
         public const uint EVENT_AIA_END = 0xAFFF;
         #endregion
 
-        public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType,
-            IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
+        public delegate void WinEventDelegate(IntPtr hWinEventHook,
+            uint eventType, IntPtr hwnd, int idObject, int idChild,
+            uint dwEventThread, uint dwmsEventTime);
 
         [DllImport("user32.dll")]
-        public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr
-            hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess,
-            uint idThread, uint dwFlags);
+        public static extern IntPtr SetWinEventHook(uint eventMin,
+            uint eventMax, IntPtr hmodWinEventProc,
+            WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread,
+            uint dwFlags);
 
         [DllImport("user32.dll")]
         static extern bool UnhookWinEvent(IntPtr hWinEventHook);
@@ -312,16 +335,19 @@ namespace btwm
             public ushort atomWindowType;
             public ushort wCreatorVersion;
 
-            public WINDOWINFO(Boolean? filler) : this()   // Allows automatic initialization of "cbSize" with "new WINDOWINFO(null/true/false)".
+            // Allows automatic initialization of "cbSize" with
+            // "new WINDOWINFO(null/true/false)".
+            public WINDOWINFO(bool? filler) : this()
             {
-                cbSize = (UInt32)(Marshal.SizeOf(typeof(WINDOWINFO)));
+                cbSize = (uint)(Marshal.SizeOf(typeof(WINDOWINFO)));
             }
 
         }
 
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool GetWindowInfo(IntPtr hwnd, ref WINDOWINFO pwi);
+        public static extern bool GetWindowInfo(IntPtr hwnd,
+            ref WINDOWINFO pwi);
 
         /// <summary>
         /// Send the window's title to the StringBuilder
@@ -331,7 +357,8 @@ namespace btwm
         /// <param name="nMaxCount"></param>
         /// <returns></returns>
         [DllImport("USER32.DLL")]
-        public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+        public static extern int GetWindowText(IntPtr hWnd,
+            StringBuilder lpString, int nMaxCount);
 
         /// <summary>
         /// Get the lenght of a window's title
@@ -342,7 +369,8 @@ namespace btwm
         public static extern int GetWindowTextLength(IntPtr hWnd);
 
         /// <summary>
-        /// Helper function. Return a string containing the handled window's title.
+        /// Helper function. Return a string containing the handled window's
+        /// title.
         /// </summary>
         /// <param name="hWnd">The window handler</param>
         /// <returns>Handled window's title.</returns>
@@ -363,7 +391,8 @@ namespace btwm
         public static extern bool IsWindowVisible(IntPtr hWnd);
 
         /// <summary>
-        /// Return the windowHandle of the desktop's window (usually explorer.exe)
+        /// Return the windowHandle of the desktop's window
+        /// (usually explorer.exe)
         /// </summary>
         /// <returns></returns>
         [DllImport("USER32.DLL")]
@@ -380,9 +409,9 @@ namespace btwm
             Hide = 0,
             /// <summary>
             /// Activates and displays a window. If the window is minimized or
-            /// maximized, the system restores it to its original size and position.
-            /// An application should specify this flag when displaying the window
-            /// for the first time.
+            /// maximized, the system restores it to its original size and
+            /// position. An application should specify this flag when
+            /// displaying the window for the first time.
             /// </summary>
             Normal = 1,
             /// <summary>
@@ -398,13 +427,15 @@ namespace btwm
             /// </summary>
             ShowMaximized = 3,
             /// <summary>
-            /// Displays a window in its most recent size and position. This value
-            /// is similar to <see cref="Win32.ShowWindowCommand.Normal"/>, except
-            /// the window is not activated.
+            /// Displays a window in its most recent size and position. This
+            /// value is similar to
+            /// <see cref="Win32.ShowWindowCommand.Normal"/>, except the window
+            /// is not activated.
             /// </summary>
             ShowNoActivate = 4,
             /// <summary>
-            /// Activates the window and displays it in its current size and position.
+            /// Activates the window and displays it in its current size and
+            /// position.
             /// </summary>
             Show = 5,
             /// <summary>
@@ -413,27 +444,28 @@ namespace btwm
             /// </summary>
             Minimize = 6,
             /// <summary>
-            /// Displays the window as a minimized window. This value is similar to
-            /// <see cref="Win32.ShowWindowCommand.ShowMinimized"/>, except the
-            /// window is not activated.
+            /// Displays the window as a minimized window. This value is similar
+            /// to <see cref="Win32.ShowWindowCommand.ShowMinimized"/>, except
+            /// the window is not activated.
             /// </summary>
             ShowMinNoActive = 7,
             /// <summary>
-            /// Displays the window in its current size and position. This value is
-            /// similar to <see cref="Win32.ShowWindowCommand.Show"/>, except the
-            /// window is not activated.
+            /// Displays the window in its current size and position. This value
+            /// is similar to <see cref="Win32.ShowWindowCommand.Show"/>, except
+            /// the window is not activated.
             /// </summary>
             ShowNA = 8,
             /// <summary>
             /// Activates and displays the window. If the window is minimized or
-            /// maximized, the system restores it to its original size and position.
-            /// An application should specify this flag when restoring a minimized window.
+            /// maximized, the system restores it to its original size and
+            /// position. An application should specify this flag when restoring
+            /// a minimized window.
             /// </summary>
             Restore = 9,
             /// <summary>
             /// Sets the show state based on the SW_* value specified in the
-            /// STARTUPINFO structure passed to the CreateProcess function by the
-            /// program that started the application.
+            /// STARTUPINFO structure passed to the CreateProcess function by
+            /// the program that started the application.
             /// </summary>
             ShowDefault = 10,
             /// <summary>
@@ -455,7 +487,8 @@ namespace btwm
         /// <param name="bRepaint">Should the window be repainted after</param>
         /// <returns></returns>
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+        public static extern bool MoveWindow(IntPtr hWnd, int X, int Y,
+            int nWidth, int nHeight, bool bRepaint);
 
         /// <summary>
         /// Send a command to a Window
@@ -465,7 +498,8 @@ namespace btwm
         /// <returns></returns>
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool ShowWindow(IntPtr hWnd, ShowWindowCommands nCmdShow);
+        public static extern bool ShowWindow(IntPtr hWnd,
+            ShowWindowCommands nCmdShow);
 
         #endregion
     }

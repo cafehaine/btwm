@@ -13,23 +13,23 @@ namespace btwm.Layouts
 
         public override void InsertWindow(Window newWin)
         {
-            Windows.Add(newWin);
+            ManagedWindows.Add(newWin);
             redrawWindows();
         }
 
         public override void RemoveWindow(Window toRemove)
         {
-            Windows.Remove(toRemove);
+            ManagedWindows.Remove(toRemove);
             redrawWindows();
         }
 
         private void redrawWindows()
         {
-            if (Windows.Count == 0)
+            if (ManagedWindows.Count == 0)
                 return;
             int counter = 0;
-            int width = Surface.Width / Windows.Count;
-            foreach (Window win in Windows)
+            int width = Surface.Width / ManagedWindows.Count;
+            foreach (Window win in ManagedWindows)
             {
                 RECT surface = new RECT(
                     width * counter + Surface.Left,

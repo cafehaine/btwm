@@ -1,43 +1,53 @@
 ﻿using btwm.Layouts;
-using System;
 
 namespace btwm
 {
+    /// <summary>
+    /// A workspace is an equivalent to a virtual destop, it contains layout.
+    /// </summary>
     class Workspace
     {
-        public RECT surface = new RECT(0, 0, 1920, 1080);
-        private Layout layout;
+        public RECT Surface = new RECT(0, 0, 1920, 1080);
+        public Layout Layout;
 
         public Workspace()
         {
-            surface = new RECT(0, 0, 1920, 1080);
-            layout = new Split(this);
+            Surface = new RECT(0, 0, 1920, 1080);
+            Layout = new Split(this);
         }
 
+        /// <summary>
+        /// Show the content of the workspace
+        /// </summary>
         public void Show()
         {
-            layout.Show();
+            Layout.Show();
         }
 
+        /// <summary>
+        /// Hide the content of a workspace
+        /// </summary>
         public void Hide()
         {
-            layout.Hide();
+            Layout.Hide();
         }
 
-        public Layout Layout
-        {
-            get { return layout; }
-            set { layout = value; }
-        }
-
+        /// <summary>
+        /// Insert a window in this worspace
+        /// </summary>
+        /// <param name="newWin"></param>
         public void InsertWindow(Window newWin)
         {
-            layout.InsertWindow(newWin);
+            Layout.InsertWindow(newWin);
         }
 
+        /// <summary>
+        /// Rewove a window from this worspace
+        /// </summary>
+        /// <param name="toRemove"></param>
         public void RemoveWindow(Window toRemove)
         {
-            layout.RemoveWindow(toRemove);
+            Layout.RemoveWindow(toRemove);
         }
     }
 }
