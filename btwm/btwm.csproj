@@ -51,6 +51,7 @@
     <Compile Include="Handler.cs" />
     <Compile Include="Layouts\Layout.cs" />
     <Compile Include="Layouts\Split.cs" />
+    <Compile Include="PixelCoord.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Win32\RECT.cs" />

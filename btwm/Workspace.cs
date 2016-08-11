@@ -1,4 +1,5 @@
 ﻿using btwm.Layouts;
+using System;
 
 namespace btwm
 {
@@ -49,5 +50,8 @@ namespace btwm
         {
             Layout.RemoveWindow(toRemove);
         }
+
+        public void FocusWindow(Window hwnd)
+        { Layout.FocusWindow(hwnd); }
     }
 }

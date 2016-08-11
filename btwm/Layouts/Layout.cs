@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace btwm
 {
@@ -50,13 +51,15 @@ namespace btwm
             ParentWorkspace = ws;
             Type = type;
             ManagedWindows = new List<Window>();
+            FloatingWindows = new List<Window>();
         }
 
         /// <summary>
         /// Insert a window in this layout
         /// </summary>
         /// <param name="newWin">Inserted window's handler</param>
-        public virtual void InsertWindow(Window newWin)
+        /// <param name="floating">Is the window floating</param>
+        public virtual void InsertWindow(Window newWin, bool floating = false)
         { }
 
         /// <summary>
@@ -76,6 +79,9 @@ namespace btwm
         /// Hide all windows of this layout
         /// </summary>
         public virtual void Hide()
+        { }
+
+        public virtual void FocusWindow(Window hwnd)
         { }
     }
 }

@@ -8,7 +8,7 @@ namespace btwm
         /// <summary>
         /// The Window Handle of this window
         /// </summary>
-        public HWND WindowHandler;
+        public HWND HWnd;
         /// <summary>
         /// The status of this window
         /// </summary>
@@ -41,13 +41,13 @@ namespace btwm
 
         public Window(Layout parentLayout, HWND windowHandler)
         {
-            WindowHandler = windowHandler;
+            HWnd = windowHandler;
         }
 
         private void placeWindow(RECT surface)
         {
-            user32.MoveWindow(WindowHandler , surface.Left, surface.Top,
-                surface.Right, surface.Bottom, true);
+            user32.MoveWindow(HWnd , surface.Left, surface.Top,
+                surface.Width, surface.Height, true);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace btwm
         /// </summary>
         public void Hide()
         {
-            user32.ShowWindow(WindowHandler, user32.ShowWindowCommands.Hide);
+            user32.ShowWindow(HWnd, user32.ShowWindowCommands.Hide);
             Status = user32.ShowWindowCommands.Hide;
         }
 
@@ -64,10 +64,11 @@ namespace btwm
         /// </summary>
         public void Show()
         {
-            user32.ShowWindow(WindowHandler, user32.ShowWindowCommands.Show);
+            user32.ShowWindow(HWnd, user32.ShowWindowCommands.Show);
             Status = user32.ShowWindowCommands.Show;
         }
 
+        //TODO: Implement
         /// <summary>
         /// Set this window to fullscreen
         /// </summary>
@@ -76,6 +77,7 @@ namespace btwm
             throw new NotImplementedException();
         }
 
+        //TODO: Implement
         /// <summary>
         /// Set this window to non-fullscreen
         /// </summary>
@@ -84,6 +86,7 @@ namespace btwm
             throw new NotImplementedException();
         }
 
+        //TODO: Implement
         /// <summary>
         /// Strip this window's borders in case of no-border mode
         /// </summary>
@@ -91,5 +94,13 @@ namespace btwm
         {
             throw new NotImplementedException();
         }
+
+        public override string ToString()
+        {
+            return "{HWnd=" + HWnd.ToString() + "}";
+        }
+
+        public override bool Equals(object obj)
+        { return obj.GetType() == typeof(Window) ? (obj as Window).HWnd == HWnd : false; }
     }
 }

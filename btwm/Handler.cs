@@ -12,11 +12,13 @@ namespace btwm
     {
         public bool Running;
 
-        Dictionary<string, Workspace> workspaces;
-        Dictionary<IntPtr, Window> handledWindows;
-        string openedWorkspace;
-        shellHookHelper shellHookHelp;
-        List<Screen> screens;
+        private Dictionary<string, Workspace> workspaces;
+        private Dictionary<IntPtr, Window> handledWindows;
+        private string openedWorkspace;
+        private shellHookHelper shellHookHelp;
+        private List<Screen> screens;
+        private WinEventHook winHook;
+        private IntPtr focusedWindow;
 
         private class shellHookHelper : Form
         {
@@ -29,9 +31,9 @@ namespace btwm
                 // shellhooks without explorer.exe
                 SetTaskmanWindow(Handle);
                 this.parentHandler = parentHandler;
-                notificationMessage = shellHook.RegisterWindowMessage(
+                notificationMessage = ShellHook.RegisterWindowMessage(
                     "SHELLHOOK");
-                shellHook.RegisterShellHookWindow(Handle);
+                ShellHook.RegisterShellHookWindow(Handle);
 
                 MinimizedMetrics mm = new MinimizedMetrics
                 {
@@ -57,6 +59,7 @@ namespace btwm
                     Marshal.DestroyStructure(mmPtr, typeof(MinimizedMetrics));
                     Marshal.FreeHGlobal(mmPtr);
                 }
+
             }
 
             /// <summary>
@@ -79,7 +82,7 @@ namespace btwm
             /// <param name="disposing"></param>
             protected override void Dispose(bool disposing)
             {
-                try { shellHook.DeregisterShellHookWindow(Handle); }
+                try { ShellHook.DeregisterShellHookWindow(Handle); }
                 catch { }
                 base.Dispose(disposing);
             }
@@ -114,31 +117,57 @@ namespace btwm
             sortScreenList(ref screens);
             openedWorkspace = "0";
             workspaces.Add(openedWorkspace, new Workspace());
+
+            winHook = new WinEventHook(WinEventHook.WinEvents.EVENT_SYSTEM_FOREGROUND, WinEventHook.WinEvents.EVENT_SYSTEM_FOREGROUND);
+            winHook.Handle += eventReceiver;
+        }
+
+        public void CommandExecutor(string command)
+        {
+            switch (command)
+            {
+                case "splith":
+                    if (workspaces[openedWorkspace].Layout.Type ==
+                        Layout.LayoutType.split)
+                        (workspaces[openedWorkspace].Layout as Split).NextSplit(
+                            WindowTree.type.splith);
+                    break;
+                case "splitv":
+                    if (workspaces[openedWorkspace].Layout.Type ==
+                        Layout.LayoutType.split)
+                        (workspaces[openedWorkspace].Layout as Split).NextSplit(
+                            WindowTree.type.splitv);
+                    break;
+            }
         }
 
         /// <summary>
-        /// Called whenever an event is recieved
+        /// Called whenever a shell event is received
         /// </summary>
         /// <param name="m"></param>
         void eventReceiver(ref Message m)
         {
             // Interpret message
-            switch ((shellHook.ShellEvents)m.WParam.ToInt32())
+            switch ((ShellHook.ShellEvents)m.WParam.ToInt32())
             {
-                case shellHook.ShellEvents.HSHELL_WINDOWCREATED:
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("{0:x8}\tregistered", m.LParam);
+                case ShellHook.ShellEvents.HSHELL_WINDOWCREATED:
                     handledWindows.Add(m.LParam, new Window(new Split(
                         new Workspace()), m.LParam));
                     workspaces[openedWorkspace].InsertWindow(
                         handledWindows[m.LParam]);
+                    focusedWindow = m.LParam;
+                    currentWorkspace.FocusWindow(handledWindows[m.LParam]);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine(handledWindows[m.LParam].ToString() + " opened");
+                    Console.ResetColor();
                     break;
 
-                case shellHook.ShellEvents.HSHELL_WINDOWDESTROYED:
+                case ShellHook.ShellEvents.HSHELL_WINDOWDESTROYED:
                     if (handledWindows.ContainsKey(m.LParam))
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("{0:x8}\tremoved", m.LParam);
+                        Console.WriteLine(handledWindows[m.LParam].ToString() + " closed");
+                        Console.ResetColor();
                         workspaces[openedWorkspace].RemoveWindow(
                             handledWindows[m.LParam]);
                         handledWindows.Remove(m.LParam);
@@ -148,6 +177,29 @@ namespace btwm
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// Called whenever a WinEvent is received
+        /// </summary>
+        /// <param name="hWinEventHook"></param>
+        /// <param name="iEvent"></param>
+        /// <param name="hWnd"></param>
+        /// <param name="idObject"></param>
+        /// <param name="idChild"></param>
+        /// <param name="dwEventThread"></param>
+        /// <param name="dwmsEventTime"></param>
+        void eventReceiver(WinEventHook.WinEvents eventType, IntPtr hWnd)
+        {
+            if (handledWindows.ContainsKey(hWnd))
+                if (focusedWindow != hWnd)
+                {
+                    currentWorkspace.FocusWindow(handledWindows[hWnd]);
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine(handledWindows[hWnd].ToString() + " focused");
+                    Console.ResetColor();
+                    focusedWindow = hWnd;
+                }
         }
     }
 }
