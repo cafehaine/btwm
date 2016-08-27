@@ -1,57 +1,110 @@
 ﻿using btwm.Layouts;
 using System;
+using System.Collections.Generic;
 
 namespace btwm
 {
     /// <summary>
-    /// A workspace is an equivalent to a virtual destop, it contains layout.
+    /// A workspace is an equivalent to a virtual destop, it contains layouts.
     /// </summary>
-    class Workspace
+    class Workspace : Container
     {
-        public RECT Surface = new RECT(0, 0, 1920, 1080);
-        public Layout Layout;
+        private Layout BaseContainer;
+        private Layout.LayoutType nextLayout = Layout.LayoutType.tabbed;
+        private List<IntPtr> handledWindows;
+        private List<Window> Floating;
 
-        public Workspace()
+        public Workspace(Handler handler, RECT surface) : base(ContainerTypes.Workspace, handler, surface)
         {
-            Surface = new RECT(0, 0, 1920, 1080);
-            Layout = new Split(this);
+            CanContainContainers = true;
+            CanContainWindows = true;
+            Floating = new List<Window>();
+            handledWindows = new List<IntPtr>();
+            BaseContainer = null;
         }
 
-        /// <summary>
-        /// Show the content of the workspace
-        /// </summary>
-        public void Show()
+        public override void SetNextLayout(IntPtr focusedWindow, Layout.LayoutType nextLayout)
         {
-            Layout.Show();
+            if (BaseContainer == null)
+                this.nextLayout = nextLayout;
+            else if (BaseContainer.ContainsWindow(focusedWindow))
+                BaseContainer.SetNextLayout(focusedWindow, nextLayout);
         }
 
-        /// <summary>
-        /// Hide the content of a workspace
-        /// </summary>
-        public void Hide()
+        public override void WindowChangedTitle(IntPtr x)
         {
-            Layout.Hide();
+            if (BaseContainer.ContainsWindow(x))
+                BaseContainer.WindowChangedTitle(x);
         }
 
-        /// <summary>
-        /// Insert a window in this worspace
-        /// </summary>
-        /// <param name="newWin"></param>
-        public void InsertWindow(Window newWin)
+        public override void Show()
         {
-            Layout.InsertWindow(newWin);
+            BaseContainer.Show();
+            Floating.ForEach(w => w.Show());
         }
 
-        /// <summary>
-        /// Rewove a window from this worspace
-        /// </summary>
-        /// <param name="toRemove"></param>
-        public void RemoveWindow(Window toRemove)
+        public override void Hide()
         {
-            Layout.RemoveWindow(toRemove);
+            Floating.ForEach(w => w.Hide());
+            BaseContainer.Hide();
         }
 
-        public void FocusWindow(Window hwnd)
-        { Layout.FocusWindow(hwnd); }
+        public override bool ContainsWindow(IntPtr x)
+        {
+            return handledWindows.Contains(x);
+        }
+
+        public override void InsertWindow(IntPtr win)
+        {
+            handledWindows.Add(win);
+            if (MainHandler.Configuration.ShouldBeFloating(win))
+                Floating.Add(new Window(win));
+            else
+            {
+                if (BaseContainer != null)
+                    BaseContainer.InsertWindow(win);
+                else
+                {
+                    switch (nextLayout)
+                    {
+                        case Layout.LayoutType.splith:
+                            BaseContainer = new Split(MainHandler, surface, this, true);
+                            break;
+                        case Layout.LayoutType.splitv:
+                            BaseContainer = new Split(MainHandler, surface, this, false);
+                            break;
+                        case Layout.LayoutType.stacking:
+                            throw new NotImplementedException();
+                        case Layout.LayoutType.tabbed:
+                            BaseContainer = new Htabbed(MainHandler, surface, this);
+                            break;
+                        case Layout.LayoutType.vtabbed:
+                            BaseContainer = new Vtabbed(MainHandler, surface, this);
+                            break;
+                        case Layout.LayoutType.unset:
+                            throw new Exception("Unset layout is impossibru, wtf man.");
+                    }
+                    BaseContainer.InsertWindow(win);
+                }
+            }
+        }
+
+        public override void RemoveWindow(IntPtr toRemove)
+        {
+            int index = Floating.FindIndex(w => w.HWnd == toRemove);
+
+            if (index == -1)
+                BaseContainer.RemoveWindow(toRemove);
+            else
+                Floating.RemoveAt(index);
+
+            handledWindows.Remove(toRemove);
+
+            if (handledWindows.Count == 0)
+            {
+                BaseContainer.Delete();
+                BaseContainer = null;
+            }
+        }
     }
 }

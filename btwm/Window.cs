@@ -1,46 +1,48 @@
 ﻿using System;
-using HWND = System.IntPtr;
 
 namespace btwm
 {
-    class Window
+    class Window : Container
     {
         /// <summary>
         /// The Window Handle of this window
         /// </summary>
-        public HWND HWnd;
-        /// <summary>
-        /// The status of this window
-        /// </summary>
-        public user32.ShowWindowCommands Status;
-        /// <summary>
-        /// The layout this window is contained in
-        /// </summary>
-        public Layout ParentLayout;
+		public IntPtr HWnd;
 
-        /// <summary>
-        /// This window's display surface
-        /// </summary>
-        private RECT surface;
-        /// <summary>
-        /// The window's display surface
-        /// </summary>
-        public RECT Surface
+        private Layout.LayoutType nextLayout = Layout.LayoutType.unset;
+
+        public override void WindowChangedTitle(IntPtr x) { }
+
+        public override void FocusWindow(IntPtr x) { }
+
+        public override void InsertContainer(Container x) { throw new InvalidOperationException(); }
+
+        public override void InsertWindow(IntPtr x) { throw new InvalidOperationException(); }
+
+        public override void RemoveContainer(Container x) { throw new InvalidOperationException(); }
+
+        public override void RemoveWindow(IntPtr x) { throw new InvalidOperationException(); }
+
+        public override void SetNextLayout(IntPtr focusedWindow, Layout.LayoutType nextLayout)
         {
-            get
-            {
-                return surface;
-            }
-
-            set
-            {
-                surface = value;
-                placeWindow(value);
-            }
+            if (focusedWindow == HWnd)
+                this.nextLayout = nextLayout;
         }
 
-        public Window(Layout parentLayout, HWND windowHandler)
+        public override bool ContainsWindow(IntPtr x)
         {
+            return x == HWnd;
+        }
+
+        protected override void surfaceChanged()
+        {
+            placeWindow(surface);
+        }
+
+		public Window(IntPtr windowHandler) : base(ContainerTypes.Window)
+        {
+            CanContainContainers = false;
+            CanContainWindows = false;
             HWnd = windowHandler;
         }
 
@@ -50,22 +52,14 @@ namespace btwm
                 surface.Width, surface.Height, true);
         }
 
-        /// <summary>
-        /// Hide this window
-        /// </summary>
-        public void Hide()
+        public override void Show()
         {
-            user32.ShowWindow(HWnd, user32.ShowWindowCommands.Hide);
-            Status = user32.ShowWindowCommands.Hide;
+            user32.ShowWindow(HWnd, user32.ShowWindowCommands.Restore);
         }
 
-        /// <summary>
-        /// Show this window
-        /// </summary>
-        public void Show()
+        public override void Hide()
         {
-            user32.ShowWindow(HWnd, user32.ShowWindowCommands.Show);
-            Status = user32.ShowWindowCommands.Show;
+            user32.ShowWindow(HWnd, user32.ShowWindowCommands.Minimize);
         }
 
         //TODO: Implement
@@ -95,6 +89,8 @@ namespace btwm
             throw new NotImplementedException();
         }
 
+        public string Title { get { return user32.GetWindowTitle(HWnd); } }
+
         public override string ToString()
         {
             return "{HWnd=" + HWnd.ToString() + "}";
@@ -102,5 +98,18 @@ namespace btwm
 
         public override bool Equals(object obj)
         { return obj.GetType() == typeof(Window) ? (obj as Window).HWnd == HWnd : false; }
+
+        public override int GetHashCode()
+        { return HWnd.ToInt32(); }
+
+        public static bool operator ==(Window w1, Window w2)
+        {
+            return w1.Equals(w2);
+        }
+
+        public static bool operator !=(Window w1, Window w2)
+        {
+            return !w1.Equals(w2);
+        }
     }
 }

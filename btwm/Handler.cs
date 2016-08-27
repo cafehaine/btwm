@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Collections.Generic;
-using btwm.Layouts;
 using static btwm.user32;
+using static btwm.user32.WinEventHook;
 using System.Runtime.InteropServices;
+using System.IO;
+using JsonStructures;
 
 namespace btwm
 {
@@ -11,14 +13,23 @@ namespace btwm
     class Handler
     {
         public bool Running;
+        public List<IntPtr> HwndBlackList;
+        public Config.Configuration Configuration;
+        public IntPtr FocusedWindow;
+        public IntPtr LastHandledFocused;
+        public Layout.LayoutType NextLayout = Layout.LayoutType.unset;
 
         private Dictionary<string, Workspace> workspaces;
-        private Dictionary<IntPtr, Window> handledWindows;
+        private List<IntPtr> handledWindows;
         private string openedWorkspace;
         private shellHookHelper shellHookHelp;
         private List<Screen> screens;
         private WinEventHook winHook;
-        private IntPtr focusedWindow;
+
+        private Dictionary<IntPtr, string> titles;
+
+        private StreamWriter barInput;
+        private StreamReader barOutput;
 
         private class shellHookHelper : Form
         {
@@ -107,23 +118,43 @@ namespace btwm
             }
         }
 
-        public Handler()
+        public Handler(StreamWriter BarInput, StreamReader BarOutput)
         {
+            HwndBlackList = new List<IntPtr>();
             workspaces = new Dictionary<string, Workspace>();
-            handledWindows = new Dictionary<IntPtr, Window>();
+            handledWindows = new List<IntPtr>();
             shellHookHelp = new shellHookHelper(this);
             Running = true;
             screens = new List<Screen>(Screen.AllScreens);
             sortScreenList(ref screens);
             openedWorkspace = "0";
-            workspaces.Add(openedWorkspace, new Workspace());
 
-            winHook = new WinEventHook(WinEventHook.WinEvents.EVENT_SYSTEM_FOREGROUND, WinEventHook.WinEvents.EVENT_SYSTEM_FOREGROUND);
+            RECT surface = screens[0].Bounds;
+            //TODO: read from config
+            int barHeight = 17;
+            surface.Top = surface.Top + barHeight;
+            workspaces.Add(openedWorkspace, new Workspace(this, surface));
+
+            Configuration = new Config.Configuration();
+
+            barInput = BarInput;
+            barOutput = BarOutput;
+
+            /*
+            JsonStructures.Workspace[] testws = new JsonStructures.Workspace[1];
+            testws[0] = new JsonStructures.Workspace("lol");
+            Workspaces test = new Workspaces(testws,1);
+            */
+
+            titles = new Dictionary<IntPtr, string>();
+
+            winHook = new WinEventHook(WinEvents.EVENT_SYSTEM_FOREGROUND, WinEvents.EVENT_OBJECT_NAMECHANGE);
             winHook.Handle += eventReceiver;
         }
 
         public void CommandExecutor(string command)
         {
+            /*
             switch (command)
             {
                 case "splith":
@@ -139,6 +170,7 @@ namespace btwm
                             WindowTree.type.splitv);
                     break;
             }
+            */
         }
 
         /// <summary>
@@ -151,26 +183,33 @@ namespace btwm
             switch ((ShellHook.ShellEvents)m.WParam.ToInt32())
             {
                 case ShellHook.ShellEvents.HSHELL_WINDOWCREATED:
-                    handledWindows.Add(m.LParam, new Window(new Split(
-                        new Workspace()), m.LParam));
-                    workspaces[openedWorkspace].InsertWindow(
-                        handledWindows[m.LParam]);
-                    focusedWindow = m.LParam;
-                    currentWorkspace.FocusWindow(handledWindows[m.LParam]);
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine(handledWindows[m.LParam].ToString() + " opened");
-                    Console.ResetColor();
+                    if (!HwndBlackList.Contains(m.LParam) &&
+                        !GetWindowTitle(m.LParam).StartsWith("BTWM-EXCLUDED"))
+                    {
+                        handledWindows.Add(m.LParam);
+                        workspaces[openedWorkspace].InsertWindow(m.LParam);
+                        titles.Add(m.LParam, GetWindowTitle(m.LParam));
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine('{' + m.LParam.ToString() + "} opened (\"" + titles[m.LParam] + "\")");
+                        Console.ResetColor();
+                        LastHandledFocused = m.LParam;
+                    }
+                    else
+                        Console.WriteLine("Blacklisted window opened");
                     break;
 
                 case ShellHook.ShellEvents.HSHELL_WINDOWDESTROYED:
-                    if (handledWindows.ContainsKey(m.LParam))
+                    if (handledWindows.Contains(m.LParam))
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(handledWindows[m.LParam].ToString() + " closed");
-                        Console.ResetColor();
-                        workspaces[openedWorkspace].RemoveWindow(
-                            handledWindows[m.LParam]);
+                        foreach (Workspace ws in workspaces.Values)
+                            if (ws.ContainsWindow(m.LParam))
+                                ws.RemoveWindow(m.LParam);
+
                         handledWindows.Remove(m.LParam);
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine('{' + m.LParam.ToString() + "} closed (\"" + titles[m.LParam] + "\")");
+                        Console.ResetColor();
+                        titles.Remove(m.LParam);
                     }
                     break;
 
@@ -182,24 +221,46 @@ namespace btwm
         /// <summary>
         /// Called whenever a WinEvent is received
         /// </summary>
-        /// <param name="hWinEventHook"></param>
-        /// <param name="iEvent"></param>
-        /// <param name="hWnd"></param>
-        /// <param name="idObject"></param>
-        /// <param name="idChild"></param>
-        /// <param name="dwEventThread"></param>
-        /// <param name="dwmsEventTime"></param>
-        void eventReceiver(WinEventHook.WinEvents eventType, IntPtr hWnd)
+        /// <param name="eventType">type of event received</param>
+        /// <param name="hWnd">window concerned by event</param>
+        void eventReceiver(WinEvents eventType, IntPtr hWnd)
         {
-            if (handledWindows.ContainsKey(hWnd))
-                if (focusedWindow != hWnd)
-                {
-                    currentWorkspace.FocusWindow(handledWindows[hWnd]);
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine(handledWindows[hWnd].ToString() + " focused");
-                    Console.ResetColor();
-                    focusedWindow = hWnd;
-                }
+            switch (eventType)
+            {
+                case WinEvents.EVENT_SYSTEM_FOREGROUND:
+                    if (handledWindows.Contains(hWnd))
+                    {
+                        if (FocusedWindow != hWnd)
+                        {
+                            //currentWorkspace.FocusWindow(handledWindows[hWnd]);
+                            Console.ForegroundColor = ConsoleColor.Cyan;
+                            Console.WriteLine('{' + hWnd.ToString() + "} focused (\"" + titles[hWnd] + "\")");
+                            Console.ResetColor();
+                            FocusedWindow = hWnd;
+                            LastHandledFocused = hWnd;
+                        }
+                    }
+                    else
+                        FocusedWindow = (IntPtr)(-1);
+                    break;
+                case WinEvents.EVENT_OBJECT_NAMECHANGE:
+                    if (handledWindows.Contains(hWnd))
+                    {
+                        string newTitle = GetWindowTitle(hWnd);
+                        if (newTitle != titles[hWnd])
+                        {
+                            foreach (Workspace ws in workspaces.Values)
+                                if (ws.ContainsWindow(hWnd))
+                                    ws.WindowChangedTitle(hWnd);
+
+                            Console.ForegroundColor = ConsoleColor.Magenta;
+                            Console.WriteLine('{' + hWnd.ToString() + "} changed title from \"" + titles[hWnd] + "\" to \"" + newTitle + "\"");
+                            Console.ResetColor();
+                            titles[hWnd] = newTitle;
+                        }
+                    }
+                    break;
+            }
         }
     }
 }

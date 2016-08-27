@@ -17,5 +17,10 @@ namespace btwm
             this.Screen = Screen;
             DisplayedWorkspace = Workspace;
         }
+
+		public override string ToString ()
+		{
+			return "{Screen=" + Screen.ToString() + ",DisplayedWorkspace=" + DisplayedWorkspace + "}";
+		}
     }
 }

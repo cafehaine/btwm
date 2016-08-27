@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace btwm
 {
-    class Layout
+    class Layout : Container
     {
         /// <summary>
         /// A type of layout
@@ -11,9 +11,13 @@ namespace btwm
         public enum LayoutType : uint
         {
             /// <summary>
-            /// Windows will be tiled next to eachothers.
+            /// Windows will be horizontally tiled next to eachothers.
             /// </summary>
-            split,
+            splith,
+            /// <summary>
+            /// Windows will be vertically tiled next to eachothers.
+            /// </summary>
+            splitv,
             /// <summary>
             /// Only one window will be displayed. Windows' titles will be
             /// listed vertically a the top of the workspace.
@@ -23,65 +27,71 @@ namespace btwm
             /// Only one window will be displayed. Windows' titles will be
             /// displayed as tabs like in web browsers.
             /// </summary>
-            tabbed
+            tabbed,
+            /// <summary>
+            /// Only one window will be displayed. Windows' titles will be
+            /// displayed as a column on the left of the screen.
+            /// </summary>
+            vtabbed,
+            /// <summary>
+            /// Special value, used in handler to let layouts know that the
+            /// user did not ask to change the layout type.
+            /// </summary>
+            unset
         }
 
         /// <summary>
-        /// A list of all non-floating windows of this layout
+        /// A list of all windows of this layout
         /// </summary>
-        public List<Window> ManagedWindows;
+        public List<Container> Containers;
 
         /// <summary>
-        /// A list of all floating windows in this layout
-        /// </summary>
-        public List<Window> FloatingWindows;
-
-        /// <summary>
-        /// The type of the layout (split, stacking,tabbed)
+        /// The type of the layout (split, stacking, tabbed, vtabbed)
         /// </summary>
         public LayoutType Type;
 
-        /// <summary>
-        /// This layout's parent workspace
-        /// </summary>
-        public Workspace ParentWorkspace;
-
-        public Layout(Workspace ws, LayoutType type)
+        public enum Direction : byte
         {
-            ParentWorkspace = ws;
-            Type = type;
-            ManagedWindows = new List<Window>();
-            FloatingWindows = new List<Window>();
+            left = 0,
+            up = 1,
+            right = 2,
+            down = 3
         }
 
-        /// <summary>
-        /// Insert a window in this layout
-        /// </summary>
-        /// <param name="newWin">Inserted window's handler</param>
-        /// <param name="floating">Is the window floating</param>
-        public virtual void InsertWindow(Window newWin, bool floating = false)
-        { }
+        public Layout(Handler handler, RECT surface, LayoutType type, Container parent) : base(ContainerTypes.Layout, handler, surface, parent)
+        {
+            CanContainWindows = true;
+            Surface = surface;
+            Type = type;
+            Containers = new List<Container>();
+        }
 
-        /// <summary>
-        /// Remove a window from this layout
-        /// </summary>
-        /// <param name="newWin">Removed window's handler</param>
-        public virtual void RemoveWindow(Window toRemove)
-        { }
+        public override string ToString()
+		{
+			string typeName = "unknown";
+			switch (Type)
+			{
+				case LayoutType.splith:
+					typeName = "splith";
+					break;
+                case LayoutType.splitv:
+                    typeName = "splitv";
+                    break;
+                case LayoutType.tabbed:
+					typeName = "tabbed";
+					break;
+				case LayoutType.stacking:
+					typeName = "stacking";
+					break;
+                case LayoutType.vtabbed:
+                    typeName = "vtabbed";
+                    break;
+			}
+			return "{Type=" + typeName + "}";
+		}
 
-        /// <summary>
-        /// Show all windows of this layout
-        /// </summary>
-        public virtual void Show()
-        { }
+        public virtual void RepositionWindows() { throw new NotImplementedException(); }
 
-        /// <summary>
-        /// Hide all windows of this layout
-        /// </summary>
-        public virtual void Hide()
-        { }
-
-        public virtual void FocusWindow(Window hwnd)
-        { }
+        public virtual void Delete() { throw new NotImplementedException(); }
     }
 }

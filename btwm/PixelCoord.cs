@@ -30,5 +30,10 @@
 
             return true;
         }
+
+		public override string ToString ()
+		{
+			return "{X=" + X.ToString() + ",Y=" + Y.ToString() + "}";
+		}
     }
 }

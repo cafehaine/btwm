@@ -1,9 +1,26 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "btwm", "btwm\btwm.csproj", "{EF47C358-D1DE-4C68-B0DA-14B4C6E5334F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D564A513-29CB-4B72-9F5C-3EC59A565341} = {D564A513-29CB-4B72-9F5C-3EC59A565341}
+		{D96D672C-409D-473E-8270-30317978C531} = {D96D672C-409D-473E-8270-30317978C531}
+		{3DDAC5E7-0727-400D-A192-090217D94D6E} = {3DDAC5E7-0727-400D-A192-090217D94D6E}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "btwmbar", "btwmbar\btwmbar.csproj", "{D564A513-29CB-4B72-9F5C-3EC59A565341}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D96D672C-409D-473E-8270-30317978C531} = {D96D672C-409D-473E-8270-30317978C531}
+		{3DDAC5E7-0727-400D-A192-090217D94D6E} = {3DDAC5E7-0727-400D-A192-090217D94D6E}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestStatus", "TestStatus\TestStatus.csproj", "{D96D672C-409D-473E-8270-30317978C531}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonStructures", "i3JsonObjects\JsonStructures.csproj", "{9E295F26-C92A-4499-8466-71C87304A713}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configuration", "Configuration\Configuration.csproj", "{3DDAC5E7-0727-400D-A192-090217D94D6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +32,22 @@ Global
 		{EF47C358-D1DE-4C68-B0DA-14B4C6E5334F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF47C358-D1DE-4C68-B0DA-14B4C6E5334F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF47C358-D1DE-4C68-B0DA-14B4C6E5334F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D564A513-29CB-4B72-9F5C-3EC59A565341}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D564A513-29CB-4B72-9F5C-3EC59A565341}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D564A513-29CB-4B72-9F5C-3EC59A565341}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D564A513-29CB-4B72-9F5C-3EC59A565341}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D96D672C-409D-473E-8270-30317978C531}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D96D672C-409D-473E-8270-30317978C531}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D96D672C-409D-473E-8270-30317978C531}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D96D672C-409D-473E-8270-30317978C531}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E295F26-C92A-4499-8466-71C87304A713}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E295F26-C92A-4499-8466-71C87304A713}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E295F26-C92A-4499-8466-71C87304A713}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E295F26-C92A-4499-8466-71C87304A713}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DDAC5E7-0727-400D-A192-090217D94D6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DDAC5E7-0727-400D-A192-090217D94D6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DDAC5E7-0727-400D-A192-090217D94D6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DDAC5E7-0727-400D-A192-090217D94D6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

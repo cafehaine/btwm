@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -351,47 +352,61 @@ namespace btwm
             }
         }
 
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool RegisterHotKey(IntPtr hWnd, int id,
-            uint fsModifiers, uint vk);
+        public class KeyBinder
+        {
+            #region Static
+            [DllImport("user32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool RegisterHotKey(IntPtr hWnd, int id,
+                uint fsModifiers, uint vk);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+            [DllImport("user32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
+            #region Keycodes
+            // Modifiers flags
+            public static readonly uint NoRepeatMod = 0x4000;
+
+            public static readonly Dictionary<string, uint> ModKeys = new Dictionary<string, uint>
+            {
+                {"MOD1", 0x0001 }, // Alt
+                {"CTRL", 0x0002 },
+                {"SHIFT", 0x0004 },
+                {"MOD4", 0x0008 } // Super (Windows) Key
+            };
+
+            public static readonly Dictionary<string, uint> Keys = new Dictionary<string, uint>
+            {
+                {"BACK", 0x08 }, // backspace
+                {"TAB", 0x09 }, // tabulation
+                {"RETURN", 0x0D }, // enter
+                {"PAUSE", 0x13 },
+                {"ESCAPE", 0x1B },
+                {"SPACE", 0x20 },
+                {"PRIOR", 0x21 }, // PG UP
+                {"NEXT", 0x22 }, // PG DOWN
+                {"END", 0x23 },
+                {"HOME", 0x24 },
+                {"LEFT", 0x25 },
+                {"UP", 0x26 },
+                {"RIGHT", 0x27 },
+                {"DOWN", 0x28 },
+                {"SELECT", 0x29 },
+                {"PRINT", 0x2A },
+
+
+            };
+            #endregion
+            #endregion
+            public delegate void EventReceiver(string command);
+
+            public EventReceiver Handle;
+            private Dictionary<int, string> idToCommand;
+        }
         #endregion
 
         #region Window operations
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct WINDOWINFO
-        {
-            public uint cbSize;
-            public RECT rcWindow;
-            public RECT rcClient;
-            public uint dwStyle;
-            public uint dwExStyle;
-            public uint dwWindowStatus;
-            public uint cxWindowBorders;
-            public uint cyWindowBorders;
-            public ushort atomWindowType;
-            public ushort wCreatorVersion;
-
-            // Allows automatic initialization of "cbSize" with
-            // "new WINDOWINFO(null/true/false)".
-            public WINDOWINFO(bool? filler) : this()
-            {
-                cbSize = (uint)(Marshal.SizeOf(typeof(WINDOWINFO)));
-            }
-
-        }
-
-        [return: MarshalAs(UnmanagedType.Bool)]
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern bool GetWindowInfo(IntPtr hwnd,
-            ref WINDOWINFO pwi);
-
         /// <summary>
         /// Send the window's title to the StringBuilder
         /// </summary>
@@ -400,7 +415,7 @@ namespace btwm
         /// <param name="nMaxCount"></param>
         /// <returns></returns>
         [DllImport("USER32.DLL")]
-        public static extern int GetWindowText(IntPtr hWnd,
+        private static extern int GetWindowText(IntPtr hWnd,
             StringBuilder lpString, int nMaxCount);
 
         /// <summary>
@@ -409,11 +424,10 @@ namespace btwm
         /// <param name="hWnd"></param>
         /// <returns></returns>
         [DllImport("USER32.DLL")]
-        public static extern int GetWindowTextLength(IntPtr hWnd);
+        private static extern int GetWindowTextLength(IntPtr hWnd);
 
         /// <summary>
-        /// Helper function. Return a string containing the handled window's
-        /// title.
+        /// Return a string containing the handled window's title.
         /// </summary>
         /// <param name="hWnd">The window handler</param>
         /// <returns>Handled window's title.</returns>
@@ -424,22 +438,6 @@ namespace btwm
             GetWindowText(hWnd, builder, length + 1);
             return builder.ToString();
         }
-
-        /// <summary>
-        /// Returns true if the window is displayed
-        /// </summary>
-        /// <param name="hWnd"></param>
-        /// <returns></returns>
-        [DllImport("USER32.DLL")]
-        public static extern bool IsWindowVisible(IntPtr hWnd);
-
-        /// <summary>
-        /// Return the windowHandle of the desktop's window
-        /// (usually explorer.exe)
-        /// </summary>
-        /// <returns></returns>
-        [DllImport("USER32.DLL")]
-        public static extern IntPtr GetShellWindow();
 
         /// <summary>
         /// Command to send to a window

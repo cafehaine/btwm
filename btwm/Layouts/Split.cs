@@ -1,285 +1,243 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-
-//TODO: Fix vertical split glitch
 
 namespace btwm.Layouts
 {
-    class WindowTree
-    {
-        public enum type
-        {
-            unset  = 0,
-            splith = 1,
-            splitv = 2,
-            window = 3
-        }
-
-        public type TreeType;
-        public type NextSplit;
-        public WindowTree Focused;
-        public bool IsFocused;
-        public List<WindowTree> SubTrees;
-        public WindowTree Parent;
-        public Window Window;
-        public List<double> Proportions;
-        public RECT Surface;
-
-        private WindowTree rootTree;
-
-        /// <summary>
-        /// Create a new empty window split tree
-        /// </summary>
-        /// <param name="Surface"></param>
-        public WindowTree(RECT Surface)
-        {
-            this.Surface = Surface;
-            Parent = this;
-            Focused = this;
-            IsFocused = true;
-            SubTrees = new List<WindowTree>();
-            Proportions = new List<double>();
-            TreeType = (type)1;
-            NextSplit = 0;
-            rootTree = this;
-        }
-
-        private WindowTree(type Type, WindowTree ParentNode, RECT Surface, WindowTree root)
-        {
-            TreeType = Type;
-            Parent = ParentNode;
-            this.Surface = Surface;
-            SubTrees = new List<WindowTree>();
-            Proportions = new List<double>();
-            NextSplit = 0;
-            rootTree = root;
-        }
-
-        private WindowTree(Window Win, WindowTree ParentNode, WindowTree root)
-        {
-            TreeType = type.window;
-            Parent = ParentNode;
-            SubTrees = new List<WindowTree>();
-            Proportions = new List<double>();
-            Window = Win;
-            NextSplit = 0;
-            rootTree = root;
-        }
-
-        public void ReDraw()
-        {
-            if (Parent == this)
-                updateSubSurfacesFromProportions();
-
-            if (TreeType == type.window)
-                Window.Surface = Surface;
-
-            foreach (WindowTree tree in SubTrees)
-                tree.ReDraw();
-        }
-
-        /// <summary>
-        /// Rebuild the Proportions List when a window is added/removed
-        /// </summary>
-        /// <param name="add">Was a window added (true = added, false = removed)
-        /// </param>
-        public void CalculateNewProportions(bool add)
-        {
-            if (add)
-            {
-                double total = 0;
-                for (int i = 0; i < Proportions.Count; i++)
-                {
-                    Proportions[i] = Proportions[i] * Proportions.Count
-                        / (Proportions.Count + 1);
-                    total += Proportions[i];
-                }
-                Proportions.Add(1 - total);
-            }
-            else
-            {
-                for (int i = 0; i < Proportions.Count; i++)
-                {
-                    Proportions[i] = Proportions[i] * (Proportions.Count +1)
-                        / (Proportions.Count);
-                }
-            }
-        }
-
-        private void updateSubSurfacesFromProportions()
-        {
-            switch (TreeType)
-            {
-                case type.splith:
-                    int posX = Surface.Left;
-                    for (int i = 0; i < SubTrees.Count; i++)
-                    {
-                        int width = (int)(Surface.Width * Proportions[i]);
-                        SubTrees[i].Surface = new RECT(posX, Surface.Top,
-                            posX + width, Surface.Bottom);
-                        posX += width;
-                    }
-                    break;
-                case type.splitv:
-                    int posY = Surface.Top;
-                    for (int i = 0; i < SubTrees.Count; i++)
-                    {
-                        int height = (int)(Surface.Width * Proportions[i]);
-                        SubTrees[i].Surface = new RECT(Surface.Left, posY,
-                            Surface.Right, posY + height);
-                        posY += height;
-                    }
-                    break;
-            }
-
-            foreach (WindowTree tree in SubTrees)
-                tree.updateSubSurfacesFromProportions();
-
-        }
-
-        private void updateFocus(WindowTree NewFocused)
-        {
-            IsFocused = false;
-            if (this == NewFocused)
-                IsFocused = true;
-
-            Focused = NewFocused;
-
-            foreach (WindowTree tree in SubTrees)
-                tree.updateFocus(NewFocused);
-        }
-
-        public bool RemoveWindow(Window toRemove)
-        {
-            if (TreeType == type.window)
-            {
-                if (Window == toRemove)
-                {
-                    int index = Parent.SubTrees.FindIndex(t => t == this);
-                    Parent.Proportions.RemoveAt(index);
-                    Parent.SubTrees.RemoveAt(index);
-                    Parent.CalculateNewProportions(false);
-                    return true;
-                }
-                return false;
-            }
-            else
-            {
-                foreach (WindowTree tree in SubTrees)
-                    if (tree.RemoveWindow(toRemove))
-                        return true;
-                return false;
-            }
-
-        }
-
-        /// <summary>
-        /// Insert a new window in the tree. Don't forget to ReDraw() the root
-        /// node afterwards.
-        /// </summary>
-        /// <param name="ToInsert"></param>
-        public void InsertWindow(Window ToInsert)
-        {
-            if (!IsFocused)
-                Focused.InsertWindow(ToInsert);
-            else
-            {
-                switch (TreeType)
-                {
-                    case type.splith:
-                        SubTrees.Add(new WindowTree(ToInsert, this, rootTree));
-                        updateFocus(SubTrees.Last());
-                        CalculateNewProportions(true);
-                        break;
-                    case type.splitv:
-                        SubTrees.Add(new WindowTree(ToInsert, this, rootTree));
-                        updateFocus(SubTrees.Last());
-                        CalculateNewProportions(true);
-                        break;
-                    case type.window:
-                        if (NextSplit == type.unset)
-                        {
-                            // NextSplit is unset, we need to insert window in
-                            // parent node
-                            Parent.SubTrees.Add(
-                                new WindowTree(ToInsert, Parent, rootTree));
-                            updateFocus(Parent.SubTrees.Last());
-                            Parent.CalculateNewProportions(true);
-                        }
-                        else
-                        {
-                            TreeType = NextSplit;
-                            Proportions.Add(50);
-                            SubTrees.Add(new WindowTree(Window, this, rootTree));
-                            SubTrees.Add(new WindowTree(ToInsert, this, rootTree));
-                            CalculateNewProportions(true);
-                            Window = null;
-                        }
-                        break;
-                    default:
-                        throw new Exception(
-                            "Trying to insert a window in an invalid Tree.");
-                }
-            }
-        }
-
-        public void FocusWindow(Window win)
-        {
-            if (TreeType == type.window)
-            {
-                if (Window.Equals(win))
-                    rootTree.updateFocus(this);
-            }
-            else
-                foreach (WindowTree tree in SubTrees)
-                    tree.FocusWindow(win);
-
-        }
-    }
-
     class Split : Layout
     {
-        private WindowTree windowTree;
-        public Split(Workspace ws) : base(ws, LayoutType.split)
+        private class sizeContainerPair
         {
-            windowTree = new WindowTree(ws.Surface);
+            public int Size;
+            public Container Container;
+
+            public sizeContainerPair(int size, Container container)
+            {
+                Size = size;
+                Container = container;
+            }
         }
 
-        public override void InsertWindow(Window newWin, bool floating = false)
+        List<sizeContainerPair> subContainers;
+
+        List<IntPtr> handledWindows;
+        bool horizontal;
+
+        public Split(Handler handler, RECT surface, Container parent, bool horizontal) : base(handler, surface, horizontal ? LayoutType.splith : LayoutType.splitv, parent)
         {
-            if (floating)
-                FloatingWindows.Add(newWin);
+            this.horizontal = horizontal;
+            CanContainContainers = true;
+            subContainers = new List<sizeContainerPair>();
+            handledWindows = new List<IntPtr>();
+        }
+
+        public override bool ContainsWindow(IntPtr x)
+        {
+            return handledWindows.Contains(x);
+        }
+
+        public override void Hide()
+        {
+            subContainers.ForEach(p => p.Container.Hide());
+        }
+
+        public override void Show()
+        {
+            subContainers.ForEach(p => p.Container.Show());
+        }
+
+        public override void WindowChangedTitle(IntPtr x)
+        {
+            // for now only vtabbed layouts need this
+            foreach (sizeContainerPair p in subContainers)
+            {
+                if (p.Container.ContainerType == ContainerTypes.Layout &&
+                    p.Container.ContainsWindow(x))
+                    p.Container.WindowChangedTitle(x);
+            }
+        }
+
+        public override void FocusWindow(IntPtr x)
+        {
+            // for now this is only usefull in vtabbed layouts
+            foreach (sizeContainerPair p in subContainers)
+            {
+                if (p.Container.ContainerType != ContainerTypes.Layout)
+                    p.Container.FocusWindow(x);
+            }
+        }
+
+        public override void InsertWindow(IntPtr toInsert)
+        {
+            handledWindows.Add(toInsert);
+
+            IntPtr focused = MainHandler.LastHandledFocused;
+
+            if (subContainers.Count == 0)
+                InsertContainer(new Window(toInsert));
             else
             {
-                ManagedWindows.Add(newWin);
-                windowTree.InsertWindow(newWin);
+                for (int i = 0; i < subContainers.Count; i++)
+                {
+                    Container c = subContainers[i].Container;
+                    if (c.ContainerType == ContainerTypes.Window)
+                    {
+                        if ((c as Window).HWnd == focused)
+                        {
+                            //if NextLayout is set, transform c into new layout
+                            //else insert window inthis layout
+                            if (MainHandler.NextLayout != LayoutType.unset)
+                            {
+                                Container newContainer;
+                                switch (MainHandler.NextLayout)
+                                {
+                                    case LayoutType.splith:
+                                        newContainer = new Split(MainHandler, c.Surface, this, true);
+                                        newContainer.InsertContainer(c);
+                                        newContainer.InsertContainer(new Window(toInsert));
+                                        c = newContainer;
+                                        break;
+                                    case LayoutType.splitv:
+                                        newContainer = new Split(MainHandler, c.Surface, this, false);
+                                        newContainer.InsertContainer(c);
+                                        newContainer.InsertContainer(new Window(toInsert));
+                                        c = newContainer;
+                                        break;
+                                    case LayoutType.stacking:
+                                        throw new NotImplementedException();
+                                    case LayoutType.tabbed:
+                                        throw new NotImplementedException();
+                                    case LayoutType.vtabbed:
+                                        newContainer = new Vtabbed(MainHandler, c.Surface, this);
+                                        newContainer.InsertWindow((c as Window).HWnd);
+                                        newContainer.InsertWindow(toInsert);
+                                        c = newContainer;
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                InsertContainer(new Window(toInsert));
+                            }
+                        }
+                    }
+                    else if (c.ContainsWindow(focused))
+                        c.InsertWindow(toInsert);
+                }
             }
-            redrawWindows();
         }
 
-        public override void RemoveWindow(Window toRemove)
+        public override void RepositionWindows()
         {
-            windowTree.RemoveWindow(toRemove);
-            ManagedWindows.Remove(toRemove);
-            redrawWindows();
+            if (horizontal)
+            {
+                int leftPos = surface.Left;
+                for (int i = 0; i < subContainers.Count; i++)
+                {
+                    RECT newSurface = surface;
+                    newSurface.Left = leftPos;
+                    newSurface.Width = subContainers[i].Size;
+                    leftPos += subContainers[i].Size;
+                    subContainers[i].Container.Surface = newSurface;
+                }
+            }
+            else
+            {
+                int topPos = surface.Top;
+                for (int i = 0; i < subContainers.Count; i++)
+                {
+                    RECT newSurface = surface;
+                    newSurface.Top = topPos;
+                    newSurface.Height = subContainers[i].Size;
+                    topPos += subContainers[i].Size;
+                    subContainers[i].Container.Surface = newSurface;
+                }
+            }
         }
 
-        public override void FocusWindow(Window win)
+        public override void InsertContainer(Container x)
         {
-            // if not a floating window, tell window tree to focus win
-            if (!FloatingWindows.Contains(win))
-                windowTree.FocusWindow(win);
+            int totalSize = horizontal ? surface.Width : surface.Height;
+            if (subContainers.Count == 0)
+                subContainers.Add(new sizeContainerPair(totalSize, x));
+            else
+            {
+                int remainingSize = totalSize;
+                for (int i = 0; i < subContainers.Count; i++)
+                {
+                    subContainers[i].Size = subContainers[i].Size / (subContainers.Count + 1) * subContainers.Count;
+                    remainingSize -= subContainers[i].Size;
+                }
+                subContainers.Add(new sizeContainerPair(remainingSize, x));
+            }
+            RepositionWindows();
         }
 
-        private void redrawWindows()
+        public override void RemoveWindow(IntPtr x)
         {
-            windowTree.ReDraw();
+            handledWindows.Remove(x);
+            int toRemove = -1;
+            for (int i = 0; i < subContainers.Count; i++)
+            {
+                if (subContainers[i].Container.IsWindow)
+                {
+                    if ((subContainers[i].Container as Window).HWnd == x)
+                        toRemove = i;
+                }
+                else if (subContainers[i].Container.ContainsWindow(x))
+                    subContainers[i].Container.RemoveWindow(x);
+            }
+
+            if (toRemove != -1)
+            {
+                if (subContainers.Count > 1)
+                {
+                    int toAdd = subContainers[toRemove].Size / (subContainers.Count - 1);
+                    subContainers.RemoveAt(toRemove);
+                    int totalSize = horizontal ? surface.Width : surface.Height;
+
+                    int remainingSize = totalSize;
+                    for (int i = 0; i < subContainers.Count - 1; i++)
+                    {
+                        subContainers[i].Size += toAdd;
+                        remainingSize -= subContainers[i].Size;
+                    }
+                    subContainers[subContainers.Count - 1].Size = remainingSize;
+                    RepositionWindows();
+                }
+                else
+                {
+                    subContainers.Clear();
+                }
+            }
         }
 
-        public void NextSplit(WindowTree.type type)
+        protected override void surfaceChanged()
         {
-            windowTree.Focused.NextSplit = type;
+            if (subContainers != null)
+            {
+                if (subContainers.Count == 1)
+                    subContainers[0].Size = horizontal ? surface.Width : surface.Height;
+                else if (subContainers.Count >= 2)
+                {
+                    int oldSize = 0;
+                    subContainers.ForEach(p => oldSize += p.Size);
+                    int remaining = (horizontal ? surface.Width : surface.Height);
+                    float factor = oldSize / remaining;
+
+                    for (int i = 0; i < subContainers.Count - 1; i++)
+                    {
+                        subContainers[i].Size = (int)(subContainers[i].Size / factor);
+                        remaining -= subContainers[i].Size;
+                    }
+                    subContainers[subContainers.Count - 1].Size = remaining;
+                }
+            }
+        }
+
+        ~Split()
+        {
+            handledWindows.Clear();
+            subContainers.Clear();
         }
     }
 }
