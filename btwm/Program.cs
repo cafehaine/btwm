@@ -13,14 +13,19 @@ namespace btwm
         static void Main()
         {
             Console.WriteLine("BTWM is starting...");
-            //TODO: read from config bar process and arguments
+
+            // Base this on this executable's path
             string barCommand = "D:\\Documents\\Prog\\btwm\\btwmbar\\bin\\Debug\\btwmbar.exe";
+
+            Config.Configuration config = new Config.Configuration();
+
+            string arguments = config.Bar.ToCommand();
 
             Process barProcess = new Process();
             ProcessStartInfo startInfo = barProcess.StartInfo;
 
             startInfo.FileName = barCommand;
-            startInfo.Arguments = "pos=top font=\"Fira Code:12\" command=\"D:\\Documents\\Prog\\btwm\\TestStatus\\Bin\\Debug\\TestStatus.exe\"";
+            startInfo.Arguments = arguments;
             startInfo.UseShellExecute = false;
             startInfo.RedirectStandardInput = true; // send info to bar through stdin
             startInfo.RedirectStandardOutput = true; // receive info from bar through stdout

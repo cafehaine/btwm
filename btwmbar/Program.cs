@@ -18,7 +18,6 @@ namespace btwmbar
 
             Color barFore = Color.White;
             Color barBack = Color.Black;
-            int barAlpha = 255;
             Color wsForeF = Color.White;
             Color wsForeN = Color.FromArgb(200, 200, 200);
             Color wsBackF = Color.Firebrick;
@@ -26,7 +25,7 @@ namespace btwmbar
 
             string fontName = "Courier New";
             int fontSize = 12;
-            string command = "";
+            string command = "D:\\Documents\\Prog\\btwm\\TestStatus\\Bin\\Debug\\TestStatus.exe";
 
             foreach (string arg in args)
             {
@@ -34,36 +33,29 @@ namespace btwmbar
                 switch (data[0])
                 {
                     case "command":
-                        command = data[1];
+                        if (data[1] != "NotSet")
+                            command = data[1];
                         break;
                     case "pos":
                         if (data[1] == "top")
                             pos = Bar.Position.top;
                         break;
-                    case "barBack":
-                        barBack = HexColor.HexToColor(data[1], barBack);
-                        barAlpha = barBack.A;
-                        barBack = Color.FromArgb(barBack.R, barBack.G, barBack.B);
-                        break;
-                    case "barFore":
-                        barFore = HexColor.HexToColor(data[1], barFore);
-                        break;
-                    case "wsForeF":
-                        wsForeF = HexColor.HexToColor(data[1], wsForeF);
-                        break;
-                    case "wsForeN":
-                        wsForeN = HexColor.HexToColor(data[1], wsForeN);
-                        break;
-                    case "wsBackF":
-                        wsBackF = HexColor.HexToColor(data[1], wsBackF);
-                        break;
-                    case "wsBackN":
-                        wsBackN = HexColor.HexToColor(data[1], wsBackN);
+                    case "colors":
+                        string[] colors = data[1].Split(':');
+                        barBack = HexColor.HexToColor(colors[0], barBack, false);
+                        barFore = HexColor.HexToColor(colors[1], barFore);
+                        wsBackN = HexColor.HexToColor(colors[2], wsBackN);
+                        wsForeN = HexColor.HexToColor(colors[3], wsForeN);
+                        wsBackF = HexColor.HexToColor(colors[4], wsBackF);
+                        wsForeF = HexColor.HexToColor(colors[5], wsForeF);
                         break;
                     case "font":
                         string[] fontInfo = data[1].Split(':');
                         fontName = fontInfo[0];
                         fontSize = int.Parse(fontInfo[1]);
+                        break;
+                    default:
+                        MessageBox.Show("Invalid argument: " + data[0]);
                         break;
                 }
             }
@@ -80,7 +72,7 @@ namespace btwmbar
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Bar(pos, output, barBack, barAlpha, barFore,
+            Application.Run(new Bar(pos, output, barBack, barFore,
                 wsForeF, wsForeN, wsBackF, wsBackN, font, ref statusStream));
             if (!statusLine.HasExited)
                 statusLine.Kill();

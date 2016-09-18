@@ -128,7 +128,7 @@ namespace btwm.Layouts
             CanContainContainers = false;
             CanContainWindows = true;
             formSurface = surface;
-            formSurface.Height = MainHandler.Configuration.BarHeight;
+            formSurface.Height = MainHandler.Configuration.Bar.Height;
             windowSurface = new RECT(surface.Left, formSurface.Bottom, surface.Right, surface.Bottom);
             form = new htabbedForm(new Config.Configuration(), formSurface, this);
             MainHandler.HwndBlackList.Add(form.Handle);

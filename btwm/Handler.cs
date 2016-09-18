@@ -154,23 +154,7 @@ namespace btwm
 
         public void CommandExecutor(string command)
         {
-            /*
-            switch (command)
-            {
-                case "splith":
-                    if (workspaces[openedWorkspace].Layout.Type ==
-                        Layout.LayoutType.split)
-                        (workspaces[openedWorkspace].Layout as Split).NextSplit(
-                            WindowTree.type.splith);
-                    break;
-                case "splitv":
-                    if (workspaces[openedWorkspace].Layout.Type ==
-                        Layout.LayoutType.split)
-                        (workspaces[openedWorkspace].Layout as Split).NextSplit(
-                            WindowTree.type.splitv);
-                    break;
-            }
-            */
+
         }
 
         /// <summary>

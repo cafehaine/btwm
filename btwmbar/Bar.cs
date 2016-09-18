@@ -71,9 +71,9 @@ namespace btwmbar
             }
         }
 
-        public Bar(Position Pos, Screen Output, Color BarBack, int BarAlpha,
-            Color BarFore, Color WsForeF, Color WsForeN, Color WsBackF,
-            Color WsBackN, Font Font, ref StreamReader StatusOutput)
+        public Bar(Position Pos, Screen Output, Color BarBack, Color BarFore,
+            Color WsForeF, Color WsForeN, Color WsBackF, Color WsBackN,
+            Font Font, ref StreamReader StatusOutput)
         {
             Text = "BTWM-EXCLUDED Bar";
             BackColor = BarBack;
