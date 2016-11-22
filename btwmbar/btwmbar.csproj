@@ -82,6 +82,10 @@
       <Project>{9e295f26-c92a-4499-8466-71c87304a713}</Project>
       <Name>JsonStructures</Name>
     </ProjectReference>
+    <ProjectReference Include="..\TestStatus\TestStatus.csproj">
+      <Project>{d96d672c-409d-473e-8270-30317978c531}</Project>
+      <Name>TestStatus</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

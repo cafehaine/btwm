@@ -25,7 +25,7 @@ namespace btwmbar
 
             string fontName = "Courier New";
             int fontSize = 12;
-            string command = "D:\\Documents\\Prog\\btwm\\TestStatus\\Bin\\Debug\\TestStatus.exe";
+            string command = Path.GetDirectoryName(Application.ExecutablePath) + "\\TestStatus.exe";
 
             foreach (string arg in args)
             {

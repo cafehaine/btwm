@@ -85,9 +85,17 @@
   -->
   <ItemGroup />
   <ItemGroup>
+    <ProjectReference Include="..\btwmbar\btwmbar.csproj">
+      <Project>{d564a513-29cb-4b72-9f5c-3ec59a565341}</Project>
+      <Name>btwmbar</Name>
+    </ProjectReference>
     <ProjectReference Include="..\i3JsonObjects\JsonStructures.csproj">
       <Project>{9e295f26-c92a-4499-8466-71c87304a713}</Project>
       <Name>JsonStructures</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TestStatus\TestStatus.csproj">
+      <Project>{d96d672c-409d-473e-8270-30317978c531}</Project>
+      <Name>TestStatus</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

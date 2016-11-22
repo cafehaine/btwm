@@ -1,6 +1,8 @@
 ﻿using System.Windows.Forms;
 using System.Diagnostics;
 using System;
+using System.Reflection;
+using System.IO;
 
 //! ---------- Future note to self ----------
 //! Change this to hide console:
@@ -15,7 +17,7 @@ namespace btwm
             Console.WriteLine("BTWM is starting...");
 
             // Base this on this executable's path
-            string barCommand = "D:\\Documents\\Prog\\btwm\\btwmbar\\bin\\Debug\\btwmbar.exe";
+            string barCommand = Path.GetDirectoryName(Application.ExecutablePath) + "\\btwmbar.exe";
 
             Config.Configuration config = new Config.Configuration();
 
